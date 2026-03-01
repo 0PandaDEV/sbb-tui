@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Necrom4/sbb-tui/compare/v1.0.0...v1.0.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* initialize homebrew tap ([02ac0be](https://github.com/Necrom4/sbb-tui/commit/02ac0be682a264ac5ef8b93dfd555174a4abba28))
+
 # 1.0.0 (2026-03-01)
 
 
