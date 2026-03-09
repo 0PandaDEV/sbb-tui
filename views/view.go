@@ -116,6 +116,15 @@ type focusable struct {
 	index int
 }
 
+// Config holds CLI flag values to pre-fill the TUI form.
+type Config struct {
+	From          string
+	To            string
+	Date          string
+	Time          string
+	IsArrivalTime bool
+}
+
 type DataMsg struct {
 	connections []models.Connection
 	err         error
@@ -142,7 +151,7 @@ type model struct {
 	lastToQuery   string
 }
 
-func InitialModel() model {
+func InitialModel(cfg Config) model {
 	// Define input prompts
 	m := model{
 		headerOrder: []focusable{
@@ -154,7 +163,8 @@ func InitialModel() model {
 			{KindInput, "time", 3},
 			{KindButton, "search", -1},
 		},
-		inputs: make([]textinput.Model, 4),
+		inputs:        make([]textinput.Model, 4),
+		isArrivalTime: cfg.IsArrivalTime,
 	}
 
 	now := time.Now()
@@ -169,22 +179,34 @@ func InitialModel() model {
 			t.Prompt = " "
 			t.ShowSuggestions = true
 			t.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("right"))
+			if cfg.From != "" {
+				t.SetValue(cfg.From)
+			}
 			t.Focus()
 		case 1:
 			t.Placeholder = "To"
 			t.Prompt = " "
 			t.ShowSuggestions = true
 			t.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("right"))
+			if cfg.To != "" {
+				t.SetValue(cfg.To)
+			}
 		case 2:
 			t.Placeholder = now.Format("2006-01-02")
 			t.Prompt = " "
 			t.Width = 12
 			t.CharLimit = 10
+			if cfg.Date != "" {
+				t.SetValue(cfg.Date)
+			}
 		case 3:
 			t.Placeholder = now.Format("15:04")
 			t.Prompt = " "
 			t.Width = 7
 			t.CharLimit = 5
+			if cfg.Time != "" {
+				t.SetValue(cfg.Time)
+			}
 		}
 		m.inputs[i] = t
 	}

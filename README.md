@@ -39,5 +39,6 @@ go install github.com/necrom4/sbb-tui
 - [x] Google maps link to walk coordinates
   - [ ] Visual representation
 - [ ] ~~Change vehicle icon when walking (especially if it's the first step of the trip)~~ (stick to SBB app style)
+- [x] Basic command flags
 - [ ] ~~Transport type icons (doesn't seem to be available)~~  󰃧 󰔭 󰻈 
 - [ ] ~~Capacity icons (doesn't seem to be available)~~ 󰀎
