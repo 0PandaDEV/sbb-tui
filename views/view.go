@@ -452,10 +452,10 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 					t.SetCursor(len(val) + 2)
 					return nil
 				case 5:
-					if val[5] == '0' && s == "0" {
+					if val[4] == '0' && s == "0" {
 						return nil
 					}
-					if val[5] == '1' && s > "2" {
+					if val[4] == '1' && s > "2" {
 						return nil
 					}
 				case 6:
@@ -464,10 +464,10 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 					t.SetCursor(len(val) + 2)
 					return nil
 				case 8:
-					if val[8] == '0' && s == "0" {
+					if val[7] == '0' && s == "0" {
 						return nil
 					}
-					if val[8] == '3' && s > "1" {
+					if val[7] == '3' && s > "1" {
 						return nil
 					}
 				case 9:
