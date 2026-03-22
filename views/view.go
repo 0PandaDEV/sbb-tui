@@ -35,7 +35,6 @@ const (
 	// Layout dimensions
 	borderSize     = 2
 	hdrHeight      = 3
-	hdrMinWidth    = 82
 	hdrElmtPadd    = 2
 	rsltMrgn       = 1
 	smplConnHeight = 9
@@ -48,7 +47,7 @@ const (
 	fullConnPaddH = 3
 	fullConnPaddV = 1
 
-	minTermWidth  = hdrMinWidth + hdrElmtPadd
+	minTermWidth  = 80
 	minTermHeight = hdrHeight + hdrElmtPadd + helpBarHeight + borderSize + smplConnHeight
 )
 
@@ -88,13 +87,6 @@ var (
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(sbbRed).
 				Padding(fullConnPaddV, fullConnPaddH)
-
-	titleStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(sbbRed).
-			Bold(true).
-			Foreground(sbbWhite).
-			Background(sbbRed)
 
 	helpKeyStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -286,9 +278,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		inputWidth := max((m.width-hdrElmtPadd-hdrMinWidth)/2, 1)
+		// Set initial input widths based on fixed header elements, then
+		// measure the actual rendered header and correct for any difference.
+		remaining := m.width - m.headerFixedWidth()
+		inputWidth := max(remaining/2, 1)
 		m.inputs[0].Width = inputWidth
 		m.inputs[1].Width = inputWidth
+		if gap := m.width - lipgloss.Width(m.renderHeader()); gap > 0 {
+			m.inputs[0].Width += (gap + 1) / 2
+			m.inputs[1].Width += gap / 2
+		}
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -609,14 +608,24 @@ func (m model) searchCmd() tea.Cmd {
 	}
 }
 
+func (m model) headerFixedWidth() int {
+	width := 0
+	for i, item := range m.headerOrder {
+		if item.kind == KindInput && m.inputs[item.index].ShowSuggestions {
+			// From/To: only count the per-item overhead (border + padding + prompt).
+			width += borderSize + 2 + lipgloss.Width(m.inputs[item.index].Prompt)
+			continue
+		}
+		width += lipgloss.Width(m.renderHeaderItem(i))
+	}
+	return width
+}
+
 func (m model) renderHeader() string {
 	var headerItems []string
 	for i := range m.headerOrder {
 		headerItems = append(headerItems, m.renderHeaderItem(i))
 	}
-
-	headerItems = append(headerItems, titleStyle.Render(" SBB TIMETABLES <+> "))
-
 	return lipgloss.JoinHorizontal(lipgloss.Top, headerItems...)
 }
 
