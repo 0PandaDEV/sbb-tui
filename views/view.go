@@ -47,6 +47,9 @@ const (
 
 	fullConnPaddH = 3
 	fullConnPaddV = 1
+
+	minTermWidth  = hdrMinWidth + hdrElmtPadd
+	minTermHeight = hdrHeight + hdrElmtPadd + helpBarHeight + borderSize + smplConnHeight
 )
 
 var (
@@ -391,6 +394,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+	if m.width < minTermWidth || m.height < minTermHeight {
+		msg := fmt.Sprintf("Terminal too small (%dx%d)\nMinimum size: %dx%d", m.width, m.height, minTermWidth, minTermHeight)
+		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
+			noStyle.Foreground(sbbRed).Bold(true).Render(msg))
+	}
+
 	header := m.renderHeader()
 	results := lipgloss.JoinHorizontal(lipgloss.Top,
 		noStyle.
