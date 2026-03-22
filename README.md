@@ -24,7 +24,24 @@ go install github.com/necrom4/sbb-tui
 3. Add optional information such as **date**, **time**, and **whether** those are for departure or arrival.
 4. Press `Enter` to view the results (navigate with arrows).
 
+## ❓ Options
 
+```sh
+# sbb-tui --help
+sbb-tui - Swiss SBB/CFF/FFS timetable app for the terminal
+
+Usage:
+  sbb-tui [flags]
+
+Flags:
+      --arrival       Use arrival time instead of departure time
+      --date string   Pre-fill date (YYYY-MM-DD)
+      --from string   Pre-fill departure station
+      --no-nerdfont   Use Unicode fallback icons instead of Nerd Font icons
+      --time string   Pre-fill time (HH:MM)
+      --to string     Pre-fill arrival station
+  -v, --version       Print version and exit
+```
 
 ## 🏆 ROADMAP
 
