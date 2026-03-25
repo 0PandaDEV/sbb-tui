@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/Necrom4/sbb-tui/compare/v1.3.3...v1.3.4) (2026-03-25)
+
+
+### Bug Fixes
+
+* **views:** date/time string moving left when typing last character ([1040de3](https://github.com/Necrom4/sbb-tui/commit/1040de3085082bd9807d09dfabb874ee12589b08))
+
 ## [1.3.3](https://github.com/Necrom4/sbb-tui/compare/v1.3.2...v1.3.3) (2026-03-25)
 
 
