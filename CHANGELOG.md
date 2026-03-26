@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/Necrom4/sbb-tui/compare/v1.4.0...v1.5.0) (2026-03-26)
+
+
+### Features
+
+* **views:** change to Swiss date format ([ea7c466](https://github.com/Necrom4/sbb-tui/commit/ea7c466950524e9bb6de08a9ea3d765b36bf70d3)), closes [#9](https://github.com/Necrom4/sbb-tui/issues/9)
+* **views:** prefill date/time fileds ([1cf3173](https://github.com/Necrom4/sbb-tui/commit/1cf3173da99c3ed1fb40531c2b964f9b320b3687)), closes [#6](https://github.com/Necrom4/sbb-tui/issues/6)
+
 # [1.4.0](https://github.com/Necrom4/sbb-tui/compare/v1.3.4...v1.4.0) (2026-03-26)
 
 
