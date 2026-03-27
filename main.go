@@ -35,6 +35,11 @@ func main() {
 
 	flag.Parse()
 
+	theme, err := views.LoadThemeConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "warning: could not load config:", err)
+	}
+
 	if *showVersion {
 		fmt.Printf("sbb-tui v%s\n", version)
 		os.Exit(0)
@@ -47,6 +52,7 @@ func main() {
 		Time:          *timeStr,
 		IsArrivalTime: *arrival,
 		NoNerdFont:    *noNerdFont,
+		Theme:          theme,
 	}
 
 	m := views.InitialModel(cfg)

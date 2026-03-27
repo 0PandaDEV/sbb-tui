@@ -112,6 +112,7 @@ type Config struct {
 	Time          string
 	IsArrivalTime bool
 	NoNerdFont    bool
+	Theme         Theme
 }
 
 type iconSet struct {
@@ -204,6 +205,7 @@ type model struct {
 	headerOrder   []focusable
 	inputs        []textinput.Model
 	icons         iconSet
+	theme         Theme
 	noNerdFont    bool
 	isArrivalTime bool
 	connections   []models.Connection
@@ -229,6 +231,7 @@ func InitialModel(cfg Config) model {
 		},
 		inputs:        make([]textinput.Model, 4),
 		icons:         newIconSet(cfg.NoNerdFont),
+		theme:         cfg.Theme,
 		noNerdFont:    cfg.NoNerdFont,
 		isArrivalTime: cfg.IsArrivalTime,
 	}
