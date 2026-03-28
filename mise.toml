@@ -2,6 +2,15 @@
 go = "latest"
 gofumpt = "latest"
 golangci-lint = "latest"
+pre-commit = "latest"
+
+[tasks.init]
+description = "Install hooks and setup environment"
+run = "pre-commit install"
+
+[tasks.pre-commit]
+description = "Run pre-commit"
+run = "pre-commit run --all-files"
 
 [tasks.fmt]
 description = "Format Go files"
