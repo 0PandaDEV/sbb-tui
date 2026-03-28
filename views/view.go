@@ -53,6 +53,7 @@ const (
 )
 
 type styles struct {
+	text           lipgloss.Style
 	active         lipgloss.Style
 	inactive       lipgloss.Style
 	detailedResult lipgloss.Style
@@ -70,7 +71,10 @@ type styles struct {
 }
 
 func newStyles(theme config.Theme) styles {
+	textColor := lipgloss.Color(theme.Text)
 	return styles{
+		text: lipgloss.NewStyle().
+			Foreground(textColor),
 		active: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color(theme.ActiveBorder)).
@@ -114,6 +118,7 @@ func newStyles(theme config.Theme) styles {
 		logo: lipgloss.NewStyle().
 			Foreground(lipgloss.Color(theme.Logo)),
 		bold: lipgloss.NewStyle().
+			Foreground(textColor).
 			Bold(true),
 	}
 }
@@ -448,10 +453,10 @@ func (m model) View() string {
 
 	header := m.renderHeader()
 	results := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().
+		m.styles.text.
 			Height(m.resultsHeight()).
 			Render(m.renderResults()),
-		lipgloss.NewStyle().
+		m.styles.text.
 			Height(m.resultsHeight()).
 			Render(m.renderDetailedResult()),
 	)
@@ -828,7 +833,7 @@ func (m model) renderFullConnection(c models.Connection, width int) string {
 
 	// Wrap and split into visual lines for scrolling.
 	content := strings.Join(lines, "\n")
-	wrapped := lipgloss.NewStyle().Width(innerWidth).Render(content)
+	wrapped := m.styles.text.Width(innerWidth).Render(content)
 	visLines := strings.Split(wrapped, "\n")
 
 	// Scroll and clamp to the visible area.
@@ -925,7 +930,7 @@ func (m model) renderWalkSection(section models.Section) []string {
 }
 
 func (m model) formatStationLine(timeStr string, delay int, symbol, station, platform string, width, timeCol, delayCol, symbolCol int, bold bool) string {
-	textStyle := lipgloss.NewStyle()
+	textStyle := m.styles.text
 	if bold {
 		textStyle = m.styles.bold
 	}
@@ -990,7 +995,7 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
 	vehicleModel := m.styles.vehicleModel.Render(c.Sections[firstVehicle].Journey.Category + " " + c.Sections[firstVehicle].Journey.Number)
 	company := m.styles.company.Render(c.Sections[firstVehicle].Journey.Operator)
-	endStop := c.Sections[firstVehicle].Journey.To
+	endStop := m.styles.text.Render(c.Sections[firstVehicle].Journey.To)
 
 	dep := c.FromData.Departure.Local().Format("15:04")
 	arr := c.ToData.Arrival.Local().Format("15:04")
@@ -1005,12 +1010,14 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 
 	platformOrWalk := ""
 	if len(c.FromData.Platform) > 0 {
-		platformOrWalk = m.icons.plt + " " + c.FromData.Platform
+		platformOrWalk = m.icons.plt + " " + m.styles.text.Render(c.FromData.Platform)
 	} else if c.Sections[0].Walk != nil {
-		platformOrWalk = m.icons.wlk + " " + fmt.Sprintf("%vm", c.Sections[0].Arrival.Arrival.Sub(c.Sections[0].Departure.Departure).Minutes())
+		platformOrWalk = m.icons.wlk + " " + m.styles.text.Render(
+			fmt.Sprintf("%vm", c.Sections[0].Arrival.Arrival.Sub(c.Sections[0].Departure.Departure).Minutes()),
+		)
 	}
 
-	duration := formatDuration(c.Duration)
+	duration := m.styles.text.Render(formatDuration(c.Duration))
 
 	bottomLinePadding := max(width-(borderSize*2+smplConnMrgn*2+smplConnMrgn*2+3+5), 1)
 
