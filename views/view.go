@@ -987,12 +987,21 @@ func truncateString(s string, maxLen int) string {
 }
 
 func (m model) renderSimpleConnection(c models.Connection, index int, width int) string {
-	firstVehicle := 0
+	firstVehicle := -1
 	for x := range c.Sections {
 		if c.Sections[x].Journey != nil {
 			firstVehicle = x
 			break
 		}
+	}
+
+	style := m.styles.inactive.Width(width)
+	if index == m.resultIndex {
+		style = m.styles.active.Width(width)
+	}
+
+	if firstVehicle == -1 {
+		return style.Render("\n  Connection details unavailable\n")
 	}
 
 	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
@@ -1038,11 +1047,6 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 		strings.Repeat(" ", bottomLinePadding),
 		duration,
 	)
-
-	style := m.styles.inactive.Width(width)
-	if index == m.resultIndex {
-		style = m.styles.active.Width(width)
-	}
 
 	return style.Render(content)
 }
