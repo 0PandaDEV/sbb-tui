@@ -286,10 +286,10 @@ func (m *appModel) updateInputs(msg tea.Msg) tea.Cmd {
 
 func (m appModel) validateInputs() error {
 	if m.inputs[0].Value() == "" {
-		return errors.New("Please enter a departure station.")
+		return errors.New("please enter a departure station")
 	}
 	if m.inputs[1].Value() == "" {
-		return errors.New("Please enter an arrival station.")
+		return errors.New("please enter an arrival station")
 	}
 	return nil
 }
