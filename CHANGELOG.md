@@ -1,3 +1,25 @@
+# [1.7.0](https://github.com/Necrom4/sbb-tui/compare/v1.6.0...v1.7.0) (2026-03-28)
+
+
+### Bug Fixes
+
+* Change warning color from dark green to red ([d69dfd4](https://github.com/Necrom4/sbb-tui/commit/d69dfd44cf78e89109422fdff14af8d54f408a82))
+* **config:** prefer `$HOME/.config/` ([4cd361c](https://github.com/Necrom4/sbb-tui/commit/4cd361c884418702512ced1ff7b201652c228343))
+* **config:** revert back to original colors ([8f54d5d](https://github.com/Necrom4/sbb-tui/commit/8f54d5d49471266a0f4e6b39306b18f53420f159))
+* use new color system on newer master branch commits ([8074c14](https://github.com/Necrom4/sbb-tui/commit/8074c14ca289cb7b4900a3c82d8c2da82f1aefa3))
+* **views:** replace old noStyles (now `lipgloss.NewStyle`) by Text color ([a5421d6](https://github.com/Necrom4/sbb-tui/commit/a5421d6ce3c171600f22c75e9c40672f1309689c))
+* **views:** revert back to old color attributions and add new colors ([bc5fe8f](https://github.com/Necrom4/sbb-tui/commit/bc5fe8faf13ec110be062a83345c971586bdbe7b))
+
+
+### Features
+
+* load optional theme config file from ~/.config/sbb-tui/config.yaml ([4c67797](https://github.com/Necrom4/sbb-tui/commit/4c6779792249a35d4226ff10d8518aaeb6179369))
+
+
+### Performance Improvements
+
+* **views:** define styles the idiomatic way ([1d74efe](https://github.com/Necrom4/sbb-tui/commit/1d74efe2d8030add6ccea99cc14675ca92fed96c))
+
 # [1.6.0](https://github.com/Necrom4/sbb-tui/compare/v1.5.1...v1.6.0) (2026-03-27)
 
 
