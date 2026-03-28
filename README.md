@@ -38,7 +38,33 @@ go build
 3. Add optional information such as **date**, **time**, and **whether** those are for departure or arrival.
 4. Press `Enter` to view the results (navigate with arrows).
 
-## ⚙️ Options
+## ⚙️ Configuration
+
+Add your optional config at `$HOME/.config/sbb-tui/config.yaml`
+
+OS default config paths are also supported (such as `~/Library/Application Support/sbb-tui/config.yaml` in macOS)
+
+```yaml
+# default configuration
+theme:
+  text:           "#FFFFFF"
+  ghostText:      "#888888"
+  activeBorder:   "#D82E20"
+  inactiveBorder: "#484848"
+  dimmedBorder:   "#862010"
+  warningFlag:    "#D82E20"
+  keysFg:         "#FFFFFF"
+  keysBg:         "#484848"
+  vehicleFg:      "#FFFFFF"
+  vehicleBg:      "#2E3279"
+  modelFg:        "#FFFFFF"
+  modelBg:        "#D82E20"
+  companyFg:      "#484848"
+  companyBg:      "#FFFFFF"
+  logo:           "#FFFFFF"
+```
+
+## 🚩 Options
 
 ```sh
 # sbb-tui --help
@@ -57,7 +83,7 @@ Flags:
   -v, --version       Print version and exit
 ```
 
-## ❓Why
+## ❓ Why
 
 > I often work in the train, passing through remote regions of Switzerland where I'll have to wait up to an entire minute to finally be able to load the SBB website/app and get the much needed information about my next connection (I have a cheap cellular data subscription). Someday I fell onto the incredible [Swiss public transport API](https://transport.opendata.ch/docs.html) and decided it was the perfect occasion to learn how to create TUIs.
 

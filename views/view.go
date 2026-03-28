@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/necrom4/sbb-tui/api"
+	"github.com/necrom4/sbb-tui/config"
 	"github.com/necrom4/sbb-tui/models"
 	"github.com/necrom4/sbb-tui/utils"
 
@@ -51,67 +52,81 @@ const (
 	minTermHeight = 24
 )
 
-var (
-	// Colors
-	sbbWhite      = lipgloss.Color("#FFFFFF")
-	sbbMidWhite   = lipgloss.Color("#F6F6F6")
-	sbbDarkWhite  = lipgloss.Color("#DDDDDD")
-	sbbGray       = lipgloss.Color("#888888")
-	sbbMidGray    = lipgloss.Color("#484848")
-	sbbDarkGray   = lipgloss.Color("#333333")
-	sbbLightBlack = lipgloss.Color("#212121")
-	sbbBlack      = lipgloss.Color("#141414")
-	sbbRed        = lipgloss.Color("#D82E20")
-	sbbMidRed     = lipgloss.Color("#B52C24")
-	sbbDarkRed    = lipgloss.Color("#862010")
-	sbbLightBlue  = lipgloss.Color("#315086")
-	sbbBlue       = lipgloss.Color("#2E3279")
-	sbbGreen      = lipgloss.Color("#3A7446")
-)
+type styles struct {
+	text           lipgloss.Style
+	active         lipgloss.Style
+	inactive       lipgloss.Style
+	detailedResult lipgloss.Style
+	dimmedBorder   lipgloss.Style
+	helpKey        lipgloss.Style
+	helpDesc       lipgloss.Style
+	ghostText      lipgloss.Style
+	warning        lipgloss.Style
+	warningBold    lipgloss.Style
+	vehicleIcon    lipgloss.Style
+	vehicleModel   lipgloss.Style
+	company        lipgloss.Style
+	logo           lipgloss.Style
+	bold           lipgloss.Style
+}
 
-var (
-	// Styles
-	noStyle = lipgloss.NewStyle()
-
-	focusedStyle = lipgloss.NewStyle().
+func newStyles(theme config.Theme) styles {
+	textColor := lipgloss.Color(theme.Text)
+	return styles{
+		text: lipgloss.NewStyle().
+			Foreground(textColor),
+		active: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(sbbRed).
-			Padding(0, 1)
-
-	blurredStyle = lipgloss.NewStyle().
+			BorderForeground(lipgloss.Color(theme.ActiveBorder)).
+			Padding(0, 1),
+		inactive: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(sbbMidGray).
-			Padding(0, 1)
-
-	detailedResultStyle = lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(sbbRed).
-				Padding(fullConnPaddV, fullConnPaddH)
-
-	helpKeyStyle = lipgloss.NewStyle().
+			BorderForeground(lipgloss.Color(theme.InactiveBorder)).
+			Padding(0, 1),
+		detailedResult: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(theme.ActiveBorder)).
+			Padding(fullConnPaddV, fullConnPaddH),
+		dimmedBorder: lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color(theme.DimmedBorder)).
+			Padding(0, rsltMrgn),
+		helpKey: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(sbbWhite).
-			Background(sbbMidGray).
-			Padding(0, 1)
-
-	helpDescStyle = lipgloss.NewStyle().
-			Foreground(sbbGray)
-)
+			Foreground(lipgloss.Color(theme.KeysFg)).
+			Background(lipgloss.Color(theme.KeysBg)).
+			Padding(0, 1),
+		helpDesc: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(theme.GhostText)),
+		ghostText: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(theme.GhostText)),
+		warning: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(theme.WarningFlag)),
+		warningBold: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(theme.WarningFlag)).
+			Bold(true),
+		vehicleIcon: lipgloss.NewStyle().
+			Background(lipgloss.Color(theme.VehicleBg)).
+			Foreground(lipgloss.Color(theme.VehicleFg)),
+		vehicleModel: lipgloss.NewStyle().
+			Background(lipgloss.Color(theme.ModelBg)).
+			Foreground(lipgloss.Color(theme.ModelFg)).
+			Bold(true),
+		company: lipgloss.NewStyle().
+			Background(lipgloss.Color(theme.CompanyBg)).
+			Foreground(lipgloss.Color(theme.CompanyFg)),
+		logo: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(theme.Logo)),
+		bold: lipgloss.NewStyle().
+			Foreground(textColor).
+			Bold(true),
+	}
+}
 
 type focusable struct {
 	kind  int
 	id    string
 	index int
-}
-
-// Config holds CLI flag values to pre-fill the TUI form.
-type Config struct {
-	From          string
-	To            string
-	Date          string
-	Time          string
-	IsArrivalTime bool
-	NoNerdFont    bool
 }
 
 type iconSet struct {
@@ -204,6 +219,7 @@ type model struct {
 	headerOrder   []focusable
 	inputs        []textinput.Model
 	icons         iconSet
+	styles        styles
 	noNerdFont    bool
 	isArrivalTime bool
 	connections   []models.Connection
@@ -215,7 +231,7 @@ type model struct {
 	suggestSeq    [2]int
 }
 
-func InitialModel(cfg Config) model {
+func InitialModel(cfg config.Config) model {
 	// Define input prompts
 	m := model{
 		headerOrder: []focusable{
@@ -229,6 +245,7 @@ func InitialModel(cfg Config) model {
 		},
 		inputs:        make([]textinput.Model, 4),
 		icons:         newIconSet(cfg.NoNerdFont),
+		styles:        newStyles(cfg.Theme),
 		noNerdFont:    cfg.NoNerdFont,
 		isArrivalTime: cfg.IsArrivalTime,
 	}
@@ -262,7 +279,7 @@ func InitialModel(cfg Config) model {
 			t.CharLimit = 10
 			t.Width = t.CharLimit
 			t.ShowSuggestions = true
-			t.CompletionStyle = noStyle.Foreground(sbbMidGray)
+			t.CompletionStyle = m.styles.ghostText
 			t.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("right"))
 			if cfg.Date != "" {
 				t.SetValue(cfg.Date)
@@ -274,7 +291,7 @@ func InitialModel(cfg Config) model {
 			t.CharLimit = 5
 			t.Width = t.CharLimit
 			t.ShowSuggestions = true
-			t.CompletionStyle = noStyle.Foreground(sbbMidGray)
+			t.CompletionStyle = m.styles.ghostText
 			t.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("right"))
 			if cfg.Time != "" {
 				t.SetValue(cfg.Time)
@@ -431,15 +448,15 @@ func (m model) View() string {
 		minW := minTermWidth
 		msg := fmt.Sprintf("Terminal too small (%dx%d)\nMinimum size: %dx%d", m.width, m.height, minW, minTermHeight)
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
-			noStyle.Foreground(sbbRed).Bold(true).Render(msg))
+			m.styles.warningBold.Render(msg))
 	}
 
 	header := m.renderHeader()
 	results := lipgloss.JoinHorizontal(lipgloss.Top,
-		noStyle.
+		m.styles.text.
 			Height(m.resultsHeight()).
 			Render(m.renderResults()),
-		noStyle.
+		m.styles.text.
 			Height(m.resultsHeight()).
 			Render(m.renderDetailedResult()),
 	)
@@ -448,12 +465,9 @@ func (m model) View() string {
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		header,
-		noStyle.
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(sbbDarkRed).
+		m.styles.dimmedBorder.
 			Width(m.contentWidth()).
 			Height(m.resultsHeight()).
-			Padding(0, rsltMrgn).
 			Render(results),
 		helpBar,
 	)
@@ -698,7 +712,7 @@ func (m model) renderHelpBar() string {
 
 	var parts []string
 	for _, k := range keys {
-		parts = append(parts, helpKeyStyle.Render(k.key)+" "+helpDescStyle.Render(k.desc))
+		parts = append(parts, m.styles.helpKey.Render(k.key)+" "+m.styles.helpDesc.Render(k.desc))
 	}
 
 	return " " + strings.Join(parts, "   ")
@@ -706,9 +720,9 @@ func (m model) renderHelpBar() string {
 
 func (m model) renderHeaderItem(idx int) string {
 	item := m.headerOrder[idx]
-	style := blurredStyle
+	style := m.styles.inactive
 	if m.tabIndex == idx {
-		style = focusedStyle
+		style = m.styles.active
 	}
 
 	if item.kind == KindInput {
@@ -748,7 +762,7 @@ func (m model) renderResults() string {
 	}
 
 	if m.errorMsg != "" {
-		return "\n  " + noStyle.Foreground(sbbRed).Render(m.errorMsg)
+		return "\n  " + m.styles.warning.Render(m.errorMsg)
 	}
 
 	if len(m.connections) == 0 {
@@ -775,9 +789,9 @@ func (m model) renderStartScreen() string {
 	}
 	logo = strings.TrimRight(logo, "\n")
 
-	coloredLogo := noStyle.Foreground(sbbWhite).Render(logo)
+	coloredLogo := m.styles.logo.Render(logo)
 
-	text := noStyle.Foreground(sbbGray).Render("Enter stations above to see timetables")
+	text := m.styles.ghostText.Render("Enter stations above to see timetables")
 
 	block := lipgloss.JoinVertical(lipgloss.Center, text, "", coloredLogo)
 
@@ -819,7 +833,7 @@ func (m model) renderFullConnection(c models.Connection, width int) string {
 
 	// Wrap and split into visual lines for scrolling.
 	content := strings.Join(lines, "\n")
-	wrapped := noStyle.Width(innerWidth).Render(content)
+	wrapped := m.styles.text.Width(innerWidth).Render(content)
 	visLines := strings.Split(wrapped, "\n")
 
 	// Scroll and clamp to the visible area.
@@ -828,7 +842,7 @@ func (m model) renderFullConnection(c models.Connection, width int) string {
 		visLines = visLines[scrollY : scrollY+boxHeight]
 	}
 
-	return detailedResultStyle.Width(width).Height(boxHeight).Render(strings.Join(visLines, "\n"))
+	return m.styles.detailedResult.Width(width).Height(boxHeight).Render(strings.Join(visLines, "\n"))
 }
 
 func (m model) renderJourneySection(section models.Section, width int, isFirst, isLast bool) []string {
@@ -855,12 +869,10 @@ func (m model) renderJourneySection(section models.Section, width int, isFirst, 
 	spacingLine := fmt.Sprintf("%s  %s", indent, m.icons.vertLine)
 	lines = append(lines, spacingLine)
 
-	vehicleIcon := noStyle.Background(sbbBlue).Foreground(sbbWhite).Render(" " + m.icons.vhc + " ")
-	vehicleCategory := noStyle.Background(sbbRed).Foreground(sbbWhite).Bold(true).
-		Render(section.Journey.Category + " " + section.Journey.Number)
-	company := noStyle.Background(sbbWhite).Foreground(sbbBlack).
-		Render(section.Journey.Operator)
-	vehicleLine := fmt.Sprintf("%s  %s  %s %s %s", indent, m.icons.vertLine, vehicleIcon, vehicleCategory, company)
+	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
+	vehicleModel := m.styles.vehicleModel.Render(section.Journey.Category + " " + section.Journey.Number)
+	company := m.styles.company.Render(section.Journey.Operator)
+	vehicleLine := fmt.Sprintf("%s  %s  %s %s %s", indent, m.icons.vertLine, vehicleIcon, vehicleModel, company)
 	lines = append(lines, vehicleLine)
 
 	destLine := fmt.Sprintf("%s  %s   %s %s", indent, m.icons.vertLine, m.icons.twrds, section.Journey.To)
@@ -918,9 +930,9 @@ func (m model) renderWalkSection(section models.Section) []string {
 }
 
 func (m model) formatStationLine(timeStr string, delay int, symbol, station, platform string, width, timeCol, delayCol, symbolCol int, bold bool) string {
-	textStyle := noStyle
+	textStyle := m.styles.text
 	if bold {
-		textStyle = noStyle.Bold(true)
+		textStyle = m.styles.bold
 	}
 
 	timePart := textStyle.Render(timeStr)
@@ -928,7 +940,7 @@ func (m model) formatStationLine(timeStr string, delay int, symbol, station, pla
 	delayPart := ""
 	if delay > 0 {
 		delayStr := fmt.Sprintf("+%d", delay)
-		delayPart = noStyle.Foreground(sbbRed).Bold(true).Render(fmt.Sprintf("%*s", delayCol, delayStr))
+		delayPart = m.styles.warningBold.Render(fmt.Sprintf("%*s", delayCol, delayStr))
 	} else {
 		delayPart = strings.Repeat(" ", delayCol)
 	}
@@ -980,40 +992,38 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 		}
 	}
 
-	vehicleIcon := noStyle.Background(sbbBlue).Foreground(sbbWhite).Render(" " + m.icons.vhc + " ")
-	vehicleCategory := noStyle.Background(sbbRed).Foreground(sbbWhite).Bold(true).
-		Render(c.Sections[firstVehicle].Journey.Category + " " + c.Sections[firstVehicle].Journey.Number)
-	company := noStyle.Background(sbbWhite).Foreground(sbbBlack).
-		Render(c.Sections[firstVehicle].Journey.Operator)
-	endStop := noStyle.Render(c.Sections[firstVehicle].Journey.To)
+	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
+	vehicleModel := m.styles.vehicleModel.Render(c.Sections[firstVehicle].Journey.Category + " " + c.Sections[firstVehicle].Journey.Number)
+	company := m.styles.company.Render(c.Sections[firstVehicle].Journey.Operator)
+	endStop := m.styles.text.Render(c.Sections[firstVehicle].Journey.To)
 
 	dep := c.FromData.Departure.Local().Format("15:04")
 	arr := c.ToData.Arrival.Local().Format("15:04")
-	departure := noStyle.Bold(true).Render(dep)
-	arrival := noStyle.Bold(true).Render(arr)
+	departure := m.styles.bold.Render(dep)
+	arrival := m.styles.bold.Render(arr)
 
-	departureDelay := formatDelay(c.Sections[firstVehicle].Departure.Delay)
-	arrivalDelay := formatDelay(c.Sections[firstVehicle].Arrival.Delay)
+	departureDelay := m.formatDelay(c.Sections[firstVehicle].Departure.Delay)
+	arrivalDelay := m.formatDelay(c.Sections[firstVehicle].Arrival.Delay)
 
 	stopsLineWidth := max(width-stopsLineFixedWidth, stopsLineMinWidth)
-	stopsLine := noStyle.Bold(true).Render(m.renderStopsLine(c, stopsLineWidth))
+	stopsLine := m.styles.bold.Render(m.renderStopsLine(c, stopsLineWidth))
 
 	platformOrWalk := ""
 	if len(c.FromData.Platform) > 0 {
-		platformOrWalk = m.icons.plt + " " + noStyle.Render(c.FromData.Platform)
+		platformOrWalk = m.icons.plt + " " + m.styles.text.Render(c.FromData.Platform)
 	} else if c.Sections[0].Walk != nil {
-		platformOrWalk = m.icons.wlk + " " + noStyle.Render(
+		platformOrWalk = m.icons.wlk + " " + m.styles.text.Render(
 			fmt.Sprintf("%vm", c.Sections[0].Arrival.Arrival.Sub(c.Sections[0].Departure.Departure).Minutes()),
 		)
 	}
 
-	duration := noStyle.Render(formatDuration(c.Duration))
+	duration := m.styles.text.Render(formatDuration(c.Duration))
 
 	bottomLinePadding := max(width-(borderSize*2+smplConnMrgn*2+smplConnMrgn*2+3+5), 1)
 
 	content := fmt.Sprintf("\n  %s %s %s  %s\n\n  %s%s  %s  %s%s\n\n  %s%s%v\n",
 		vehicleIcon,
-		vehicleCategory,
+		vehicleModel,
 		company,
 		endStop,
 		departure,
@@ -1026,9 +1036,9 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 		duration,
 	)
 
-	style := blurredStyle.Width(width)
+	style := m.styles.inactive.Width(width)
 	if index == m.resultIndex {
-		style = focusedStyle.Width(width)
+		style = m.styles.active.Width(width)
 	}
 
 	return style.Render(content)
@@ -1049,9 +1059,9 @@ func formatDuration(duration string) string {
 	return minutes + "min"
 }
 
-func formatDelay(delay int) string {
+func (m model) formatDelay(delay int) string {
 	if delay > 0 {
-		return noStyle.Foreground(sbbRed).Bold(true).Render(fmt.Sprintf(" +%d", delay))
+		return m.styles.warningBold.Render(fmt.Sprintf(" +%d", delay))
 	}
 	return ""
 }
