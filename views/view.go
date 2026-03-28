@@ -52,24 +52,6 @@ const (
 )
 
 var (
-	// Colors
-	sbbWhite      = lipgloss.Color("#FFFFFF")
-	sbbMidWhite   = lipgloss.Color("#F6F6F6")
-	sbbDarkWhite  = lipgloss.Color("#DDDDDD")
-	sbbGray       = lipgloss.Color("#888888")
-	sbbMidGray    = lipgloss.Color("#484848")
-	sbbDarkGray   = lipgloss.Color("#333333")
-	sbbLightBlack = lipgloss.Color("#212121")
-	sbbBlack      = lipgloss.Color("#141414")
-	sbbRed        = lipgloss.Color("#D82E20")
-	sbbMidRed     = lipgloss.Color("#B52C24")
-	sbbDarkRed    = lipgloss.Color("#862010")
-	sbbLightBlue  = lipgloss.Color("#315086")
-	sbbBlue       = lipgloss.Color("#2E3279")
-	sbbGreen      = lipgloss.Color("#3A7446")
-)
-
-var (
 	noStyle = lipgloss.NewStyle()
 )
 
