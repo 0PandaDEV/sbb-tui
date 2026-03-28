@@ -1,19 +1,18 @@
-package views
+package ui
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/necrom4/sbb-tui/models"
-	"github.com/necrom4/sbb-tui/utils"
-
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/necrom4/sbb-tui/model"
 )
 
-func (m model) renderFullConnection(c models.Connection, width int) string {
+func (m appModel) renderFullConnection(c model.Connection, width int) string {
 	var lines []string
-	innerWidth := max(width-borderSize-(fullConnPaddH*2), 0)
+	innerWidth := max(width-borderSize-(detailPaddingH*2), 0)
 
 	for i, section := range c.Sections {
 		isFirst := i == 0
@@ -30,7 +29,7 @@ func (m model) renderFullConnection(c models.Connection, width int) string {
 		}
 	}
 
-	boxHeight := max(m.resultsHeight()-borderSize-(fullConnPaddV*2), 0)
+	boxHeight := max(m.resultsHeight()-borderSize-(detailPaddingV*2), 0)
 
 	// Wrap and split into visual lines for scrolling.
 	content := strings.Join(lines, "\n")
@@ -46,14 +45,14 @@ func (m model) renderFullConnection(c models.Connection, width int) string {
 	return m.styles.detailedResult.Width(width).Height(boxHeight).Render(strings.Join(visLines, "\n"))
 }
 
-func (m model) renderJourneySection(section models.Section, width int, isFirst, isLast bool) []string {
+func (m appModel) renderJourneySection(section model.Section, width int, isFirst, isLast bool) []string {
 	var lines []string
 
 	const timeCol = 5
 	const delayCol = 4
 	const symbolCol = 5
 
-	depTime := section.Departure.Departure.Local().Format("15:04")
+	depTime := section.Departure.Scheduled.Local().Format("15:04")
 	depDelay := section.Departure.Delay
 	depStation := section.Departure.Station.Name
 	depPlatform := section.Departure.Platform
@@ -70,18 +69,18 @@ func (m model) renderJourneySection(section models.Section, width int, isFirst, 
 	spacingLine := fmt.Sprintf("%s  %s", indent, m.icons.vertLine)
 	lines = append(lines, spacingLine)
 
-	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
+	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vehicle + " ")
 	vehicleModel := m.styles.vehicleModel.Render(section.Journey.Category + " " + section.Journey.Number)
 	company := m.styles.company.Render(section.Journey.Operator)
 	vehicleLine := fmt.Sprintf("%s  %s  %s %s %s", indent, m.icons.vertLine, vehicleIcon, vehicleModel, company)
 	lines = append(lines, vehicleLine)
 
-	destLine := fmt.Sprintf("%s  %s   %s %s", indent, m.icons.vertLine, m.icons.twrds, section.Journey.To)
+	destLine := fmt.Sprintf("%s  %s   %s %s", indent, m.icons.vertLine, m.icons.towards, section.Journey.To)
 	lines = append(lines, destLine)
 
 	lines = append(lines, spacingLine)
 
-	arrTime := section.Arrival.Arrival.Local().Format("15:04")
+	arrTime := section.Arrival.Scheduled.Local().Format("15:04")
 	arrDelay := section.Arrival.Delay
 	arrStation := section.Arrival.Station.Name
 	arrPlatform := section.Arrival.Platform
@@ -97,14 +96,19 @@ func (m model) renderJourneySection(section models.Section, width int, isFirst, 
 	return lines
 }
 
-func getGoogleMapsURL(s models.Section) string {
+func googleMapsURL(s model.Section) string {
 	dep := s.Departure.Station.Coordinate
 	arr := s.Arrival.Station.Coordinate
 	return fmt.Sprintf("https://www.google.com/maps/dir/?api=1&origin=%f,%f&destination=%f,%f&travelmode=walking",
 		dep.X, dep.Y, arr.X, arr.Y)
 }
 
-func (m model) renderWalkSection(section models.Section) []string {
+// renderLink generates an OSC 8 terminal hyperlink.
+func renderLink(text, url string) string {
+	return fmt.Sprintf("\x1b]8;;%s\x1b\\%s\x1b]8;;\x1b\\", url, text)
+}
+
+func (m appModel) renderWalkSection(section model.Section) []string {
 	var lines []string
 
 	walkDuration := ""
@@ -113,25 +117,25 @@ func (m model) renderWalkSection(section models.Section) []string {
 		if dur > 0 {
 			walkDuration = fmt.Sprintf("%d", dur/60)
 		} else {
-			depTime := section.Departure.Departure.Time
-			arrTime := section.Arrival.Arrival.Time
+			depTime := section.Departure.Scheduled.Time
+			arrTime := section.Arrival.Scheduled.Time
 			if !depTime.IsZero() && !arrTime.IsZero() {
 				walkDuration = fmt.Sprintf("%d", int(arrTime.Sub(depTime).Minutes()))
 			}
 		}
-		url := getGoogleMapsURL(section)
+		url := googleMapsURL(section)
 
 		// TODO: add `` icon and set that as clickable url link instead of the time
-		walkDuration = utils.RenderLink(walkDuration, url)
+		walkDuration = renderLink(walkDuration, url)
 	}
 
-	walkLine := fmt.Sprintf("           %s %s'", m.icons.wlk, walkDuration)
+	walkLine := fmt.Sprintf("           %s %s'", m.icons.walk, walkDuration)
 	lines = append(lines, walkLine)
 
 	return lines
 }
 
-func (m model) formatStationLine(timeStr string, delay int, symbol, station, platform string, width, timeCol, delayCol, symbolCol int, bold bool) string {
+func (m appModel) formatStationLine(timeStr string, delay int, symbol, station, platform string, width, timeCol, delayCol, symbolCol int, bold bool) string {
 	textStyle := m.styles.text
 	if bold {
 		textStyle = m.styles.bold
@@ -152,8 +156,8 @@ func (m model) formatStationLine(timeStr string, delay int, symbol, station, pla
 	platformPart := ""
 	platformVisibleLen := 0
 	if platform != "" {
-		platformPart = textStyle.Render(fmt.Sprintf("%s %s", m.icons.plt, platform))
-		platformVisibleLen = len(platform) + len(m.icons.plt) + 1
+		platformPart = textStyle.Render(fmt.Sprintf("%s %s", m.icons.platform, platform))
+		platformVisibleLen = len(platform) + len(m.icons.platform) + 1
 	}
 
 	fixedWidth := timeCol + delayCol + symbolCol + platformVisibleLen
@@ -185,15 +189,15 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
-func (m model) renderSimpleConnection(c models.Connection, index int, width int) string {
+func (m appModel) renderSimpleConnection(c model.Connection, index int, width int) string {
 	firstVehicle := -1
 	lastVehicle := -1
-	for x := range c.Sections {
-		if c.Sections[x].Journey != nil {
+	for i := range c.Sections {
+		if c.Sections[i].Journey != nil {
 			if firstVehicle == -1 {
-				firstVehicle = x
+				firstVehicle = i
 			}
-			lastVehicle = x
+			lastVehicle = i
 		}
 	}
 
@@ -208,13 +212,13 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 
 	lineContentWidth := max(width-style.GetHorizontalFrameSize()-2, 0)
 
-	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
+	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vehicle + " ")
 	vehicleModel := m.styles.vehicleModel.Render(c.Sections[firstVehicle].Journey.Category + " " + c.Sections[firstVehicle].Journey.Number)
 	company := m.styles.company.Render(c.Sections[firstVehicle].Journey.Operator)
 	endStop := m.styles.text.Render(c.Sections[firstVehicle].Journey.To)
 
-	dep := c.Sections[firstVehicle].Departure.Departure.Local().Format("15:04")
-	arr := c.ToData.Arrival.Local().Format("15:04")
+	dep := c.Sections[firstVehicle].Departure.Scheduled.Local().Format("15:04")
+	arr := c.To.Arrival.Local().Format("15:04")
 	departure := m.styles.bold.Render(dep)
 	arrival := m.styles.bold.Render(arr)
 
@@ -223,9 +227,9 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 
 	timelinePrefix := ""
 	if c.Sections[0].Walk != nil {
-		walkMinutes := int(c.Sections[0].Arrival.Arrival.Sub(c.Sections[0].Departure.Departure).Minutes())
+		walkMinutes := int(c.Sections[0].Arrival.Scheduled.Sub(c.Sections[0].Departure.Scheduled).Minutes())
 		if walkMinutes > 0 {
-			timelinePrefix = m.icons.wlk + " " + m.styles.text.Render(fmt.Sprintf("%d'", walkMinutes)) + "  "
+			timelinePrefix = m.icons.walk + " " + m.styles.text.Render(fmt.Sprintf("%d'", walkMinutes)) + "  "
 		}
 	}
 
@@ -247,10 +251,10 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 	platformInfo := ""
 	platform := c.Sections[firstVehicle].Departure.Platform
 	if platform == "" {
-		platform = c.FromData.Platform
+		platform = c.From.Platform
 	}
 	if platform != "" {
-		platformInfo = m.icons.plt + " " + m.styles.text.Render(platform)
+		platformInfo = m.icons.platform + " " + m.styles.text.Render(platform)
 	}
 
 	duration := m.styles.text.Render(formatDuration(c.Duration))
@@ -292,16 +296,16 @@ func formatDuration(duration string) string {
 	return minutes + " min"
 }
 
-func (m model) formatDelay(delay int) string {
+func (m appModel) formatDelay(delay int) string {
 	if delay > 0 {
 		return m.styles.warningBold.Render(fmt.Sprintf(" +%d", delay))
 	}
 	return ""
 }
 
-func (m model) renderStopsLine(c models.Connection, totalWidth int) string {
+func (m appModel) renderStopsLine(c model.Connection, totalWidth int) string {
 	if len(c.Sections) == 0 {
-		return m.icons.filledDot + m.icons.horzLine + m.icons.horzLine + m.icons.filledDot
+		return m.icons.filledDot + m.icons.horizLine + m.icons.horizLine + m.icons.filledDot
 	}
 
 	var sectionDurations []time.Duration
@@ -311,8 +315,8 @@ func (m model) renderStopsLine(c models.Connection, totalWidth int) string {
 		if s.Journey == nil {
 			continue
 		}
-		dep := s.Departure.Departure.Time
-		arr := s.Arrival.Arrival.Time
+		dep := s.Departure.Scheduled.Time
+		arr := s.Arrival.Scheduled.Time
 		if !dep.IsZero() && !arr.IsZero() {
 			dur := arr.Sub(dep)
 			sectionDurations = append(sectionDurations, dur)
@@ -322,7 +326,7 @@ func (m model) renderStopsLine(c models.Connection, totalWidth int) string {
 
 	if totalSectionDuration == 0 || len(sectionDurations) == 0 {
 		// Fallback to equal distribution
-		return m.icons.filledDot + strings.Repeat(m.icons.horzLine+m.icons.horzLine+m.icons.hollowDot, c.Transfers) + m.icons.horzLine + m.icons.horzLine + m.icons.filledDot
+		return m.icons.filledDot + strings.Repeat(m.icons.horizLine+m.icons.horizLine+m.icons.hollowDot, c.Transfers) + m.icons.horizLine + m.icons.horizLine + m.icons.filledDot
 	}
 
 	var sb strings.Builder
@@ -341,7 +345,7 @@ func (m model) renderStopsLine(c models.Connection, totalWidth int) string {
 		lineChars = max(lineChars, 1)
 		usedChars += lineChars
 
-		sb.WriteString(strings.Repeat(m.icons.horzLine, lineChars))
+		sb.WriteString(strings.Repeat(m.icons.horizLine, lineChars))
 		if i < len(sectionDurations)-1 {
 			sb.WriteString(m.icons.hollowDot)
 		} else {

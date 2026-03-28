@@ -1,28 +1,25 @@
-package views
+package ui
 
 import (
-	"github.com/necrom4/sbb-tui/config"
-
 	"github.com/charmbracelet/lipgloss"
+
+	"github.com/necrom4/sbb-tui/config"
 )
 
 const (
 	// Layout dimensions
-	borderSize     = 2
-	hdrHeight      = 3
-	rsltMrgn       = 1
-	smplConnHeight = 9
-	smplConnMrgn   = 3
-	helpBarHeight  = 1
-
-	stopsLineFixedWidth = (borderSize * 2) + (smplConnMrgn * 2) + (2+5)*2 + 6
+	borderSize          = 2
+	headerHeight        = 3
+	resultMargin        = 1
+	simpleConnHeight    = 9
+	simpleConnMargin    = 3
+	helpBarHeight       = 1
+	stopsLineFixedWidth = (borderSize * 2) + (simpleConnMargin * 2) + (2+5)*2 + 6
 	stopsLineMinWidth   = 10
-
-	fullConnPaddH = 3
-	fullConnPaddV = 1
-
-	minTermWidth  = 80
-	minTermHeight = 24
+	detailPaddingH      = 3
+	detailPaddingV      = 1
+	minTermWidth        = 80
+	minTermHeight       = 24
 )
 
 type styles struct {
@@ -59,11 +56,11 @@ func newStyles(theme config.Theme) styles {
 		detailedResult: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color(theme.ActiveBorder)).
-			Padding(fullConnPaddV, fullConnPaddH),
+			Padding(detailPaddingV, detailPaddingH),
 		dimmedBorder: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color(theme.DimmedBorder)).
-			Padding(0, rsltMrgn),
+			Padding(0, resultMargin),
 		helpKey: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(lipgloss.Color(theme.KeysFg)).

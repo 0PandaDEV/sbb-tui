@@ -1,15 +1,17 @@
-package views
+package ui
 
 import (
+	"errors"
 	"strings"
 	"time"
 
-	"github.com/necrom4/sbb-tui/api"
-
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/necrom4/sbb-tui/api"
 )
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// Update implements tea.Model.
+func (m appModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
@@ -26,13 +28,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "q":
 			active := m.headerOrder[m.tabIndex]
-			if active.kind == KindButton {
+			if active.kind == kindButton {
 				return m, tea.Quit
 			}
 
 		case "enter":
-			if err := m.validateInputs(); err != "" {
-				m.errorMsg = err
+			if err := m.validateInputs(); err != nil {
+				m.errorMsg = err.Error()
 				m.connections = nil
 				m.searched = false
 				m.resultIndex = 0
@@ -54,8 +56,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "isArrivalTime":
 				m.isArrivalTime = !m.isArrivalTime
 			case "search":
-				if err := m.validateInputs(); err != "" {
-					m.errorMsg = err
+				if err := m.validateInputs(); err != nil {
+					m.errorMsg = err.Error()
 					m.connections = nil
 					m.searched = false
 					m.resultIndex = 0
@@ -84,7 +86,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			var cmds []tea.Cmd
 			for _, item := range m.headerOrder {
-				if item.kind == KindInput {
+				if item.kind == kindInput {
 					if item.index == m.headerOrder[m.tabIndex].index {
 						cmds = append(cmds, m.inputs[item.index].Focus())
 					} else {
@@ -120,13 +122,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case SuggestionsMsg:
+	case suggestionsMsg:
 		if msg.err == nil {
 			m.inputs[msg.inputIndex].SetSuggestions(msg.names)
 		}
 		return m, nil
 
-	case DataMsg:
+	case dataMsg:
 		m.loading = false
 		if msg.err != nil {
 			m.errorMsg = "Failed to fetch connections. Check your internet connection."
@@ -145,7 +147,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
+func (m *appModel) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.inputs))
 
 	switch msg := msg.(type) {
@@ -282,20 +284,20 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func (m model) validateInputs() string {
+func (m appModel) validateInputs() error {
 	if m.inputs[0].Value() == "" {
-		return "Please enter a departure station."
+		return errors.New("Please enter a departure station.")
 	}
 	if m.inputs[1].Value() == "" {
-		return "Please enter an arrival station."
+		return errors.New("Please enter an arrival station.")
 	}
-	return ""
+	return nil
 }
 
 func fetchSuggestionsCmd(inputIndex int, query string) tea.Cmd {
 	return func() tea.Msg {
 		names, err := api.FetchLocations(query)
-		return SuggestionsMsg{inputIndex: inputIndex, names: names, err: err}
+		return suggestionsMsg{inputIndex: inputIndex, names: names, err: err}
 	}
 }
 
@@ -325,7 +327,7 @@ func toAPIDate(swiss string) string {
 	return parts[2] + "-" + parts[1] + "-" + parts[0]
 }
 
-func (m model) searchCmd() tea.Cmd {
+func (m appModel) searchCmd() tea.Cmd {
 	return func() tea.Msg {
 		res, err := api.FetchConnections(
 			m.inputs[0].Value(),
@@ -335,6 +337,6 @@ func (m model) searchCmd() tea.Cmd {
 			m.isArrivalTime,
 			m.maxVisibleConnections(),
 		)
-		return DataMsg{connections: res, err: err}
+		return dataMsg{connections: res, err: err}
 	}
 }

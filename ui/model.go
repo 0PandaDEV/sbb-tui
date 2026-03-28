@@ -1,20 +1,19 @@
-package views
+package ui
 
 import (
 	"time"
 
-	"github.com/necrom4/sbb-tui/config"
-	"github.com/necrom4/sbb-tui/models"
-
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/necrom4/sbb-tui/config"
+	"github.com/necrom4/sbb-tui/model"
 )
 
 const (
-	// Focusable item kinds
-	KindInput int = iota
-	KindButton
+	kindInput int = iota
+	kindButton
 )
 
 type focusable struct {
@@ -23,14 +22,12 @@ type focusable struct {
 	index int
 }
 
-// DataMsg is sent when the API returns connection results.
-type DataMsg struct {
-	connections []models.Connection
+type dataMsg struct {
+	connections []model.Connection
 	err         error
 }
 
-// SuggestionsMsg is sent when station name suggestions are fetched.
-type SuggestionsMsg struct {
+type suggestionsMsg struct {
 	inputIndex int
 	names      []string
 	err        error
@@ -43,8 +40,9 @@ type suggestTickMsg struct {
 	seq        int
 }
 
-type model struct {
-	width, height int
+type appModel struct {
+	width         int
+	height        int
 	tabIndex      int
 	resultIndex   int
 	detailScrollY int
@@ -54,7 +52,7 @@ type model struct {
 	styles        styles
 	noNerdFont    bool
 	isArrivalTime bool
-	connections   []models.Connection
+	connections   []model.Connection
 	loading       bool
 	errorMsg      string
 	searched      bool
@@ -63,16 +61,17 @@ type model struct {
 	suggestSeq    [2]int
 }
 
-func InitialModel(cfg config.Config) model {
-	m := model{
+// NewModel creates the initial Bubbletea model from the application config.
+func NewModel(cfg config.Config) appModel {
+	m := appModel{
 		headerOrder: []focusable{
-			{KindInput, "from", 0},
-			{KindInput, "to", 1},
-			{KindButton, "swap", -1},
-			{KindButton, "isArrivalTime", -1},
-			{KindInput, "date", 2},
-			{KindInput, "time", 3},
-			{KindButton, "search", -1},
+			{kindInput, "from", 0},
+			{kindInput, "to", 1},
+			{kindButton, "swap", -1},
+			{kindButton, "isArrivalTime", -1},
+			{kindInput, "date", 2},
+			{kindInput, "time", 3},
+			{kindButton, "search", -1},
 		},
 		inputs:        make([]textinput.Model, 4),
 		icons:         newIconSet(cfg.NoNerdFont),
@@ -135,4 +134,5 @@ func InitialModel(cfg config.Config) model {
 	return m
 }
 
-func (m model) Init() tea.Cmd { return textinput.Blink }
+// Init implements tea.Model.
+func (m appModel) Init() tea.Cmd { return textinput.Blink }

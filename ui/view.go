@@ -1,5 +1,5 @@
-// Package views implements the Bubbletea TUI for SBB timetable queries.
-package views
+// Package ui implements the Bubbletea TUI for SBB timetable queries.
+package ui
 
 import (
 	_ "embed"
@@ -18,7 +18,8 @@ var (
 	sbbLogoNerdFont string
 )
 
-func (m model) View() string {
+// View implements tea.Model.
+func (m appModel) View() string {
 	if m.width < minTermWidth || m.height < minTermHeight {
 		msg := fmt.Sprintf("Terminal too small (%dx%d)\nMinimum size: %dx%d", m.width, m.height, minTermWidth, minTermHeight)
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
@@ -49,23 +50,23 @@ func (m model) View() string {
 
 // Layout calculations
 
-func (m model) contentWidth() int {
+func (m appModel) contentWidth() int {
 	return max(m.width-borderSize, 0)
 }
 
-func (m model) resultsHeight() int {
-	return max(m.height-hdrHeight-borderSize-helpBarHeight, 0)
+func (m appModel) resultsHeight() int {
+	return max(m.height-headerHeight-borderSize-helpBarHeight, 0)
 }
 
-func (m model) maxVisibleConnections() int {
-	return max(m.resultsHeight()/smplConnHeight, 1)
+func (m appModel) maxVisibleConnections() int {
+	return max(m.resultsHeight()/simpleConnHeight, 1)
 }
 
-func (m model) resultBoxWidth() int {
-	return max((m.width-smplConnMrgn)/2, rsltMrgn+stopsLineMinWidth+stopsLineFixedWidth)
+func (m appModel) resultBoxWidth() int {
+	return max((m.width-simpleConnMargin)/2, resultMargin+stopsLineMinWidth+stopsLineFixedWidth)
 }
 
-func (m model) headerFixedWidth() int {
+func (m appModel) headerFixedWidth() int {
 	width := 0
 	for i, item := range m.headerOrder {
 		if item.id == "from" || item.id == "to" {
@@ -80,7 +81,7 @@ func (m model) headerFixedWidth() int {
 
 // Header rendering
 
-func (m model) renderHeader() string {
+func (m appModel) renderHeader() string {
 	var headerItems []string
 	for i := range m.headerOrder {
 		headerItems = append(headerItems, m.renderHeaderItem(i))
@@ -88,7 +89,7 @@ func (m model) renderHeader() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, headerItems...)
 }
 
-func (m model) renderHelpBar() string {
+func (m appModel) renderHelpBar() string {
 	keys := []struct{ key, desc string }{
 		{m.icons.keyTab, "navigate"},
 		{m.icons.keyEnter, "search"},
@@ -107,14 +108,14 @@ func (m model) renderHelpBar() string {
 	return " " + strings.Join(parts, "   ")
 }
 
-func (m model) renderHeaderItem(idx int) string {
+func (m appModel) renderHeaderItem(idx int) string {
 	item := m.headerOrder[idx]
 	style := m.styles.inactive
 	if m.tabIndex == idx {
 		style = m.styles.active
 	}
 
-	if item.kind == KindInput {
+	if item.kind == kindInput {
 		input := m.inputs[item.index]
 		view := input.View()
 		if input.ShowSuggestions {
@@ -128,22 +129,22 @@ func (m model) renderHeaderItem(idx int) string {
 	icon := " "
 	switch item.id {
 	case "swap":
-		icon = m.icons.swp
+		icon = m.icons.swap
 	case "isArrivalTime":
 		if m.isArrivalTime {
-			icon = m.icons.arr
+			icon = m.icons.arrival
 		} else {
-			icon = m.icons.dpt
+			icon = m.icons.departure
 		}
 	case "search":
-		icon = m.icons.srch
+		icon = m.icons.search
 	}
 	return style.Render(icon)
 }
 
 // Results layout
 
-func (m model) renderResults() string {
+func (m appModel) renderResults() string {
 	if m.loading {
 		return "\n  Searching connections..."
 	}
@@ -169,7 +170,7 @@ func (m model) renderResults() string {
 	return lipgloss.JoinVertical(lipgloss.Left, boxes...)
 }
 
-func (m model) renderStartScreen() string {
+func (m appModel) renderStartScreen() string {
 	logo := sbbLogoNerdFont
 	if m.noNerdFont {
 		logo = sbbLogo
@@ -182,13 +183,13 @@ func (m model) renderStartScreen() string {
 
 	block := lipgloss.JoinVertical(lipgloss.Center, text, "", coloredLogo)
 
-	width := max(m.contentWidth()-borderSize-(rsltMrgn*2), 0)
+	width := max(m.contentWidth()-borderSize-(resultMargin*2), 0)
 	height := m.resultsHeight()
 
 	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, block)
 }
 
-func (m model) renderDetailedResult() string {
+func (m appModel) renderDetailedResult() string {
 	if len(m.connections) == 0 {
 		return ""
 	}

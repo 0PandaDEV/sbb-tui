@@ -1,21 +1,21 @@
-package views
+package ui
 
 type iconSet struct {
 	// Mode-dependent (Nerd Font vs Unicode fallback)
-	arr    string
-	dpt    string
-	plt    string
-	srch   string
-	swp    string
-	vhc    string
-	wlk    string
-	prompt string
+	arrival   string
+	departure string
+	platform  string
+	search    string
+	swap      string
+	vehicle   string
+	walk      string
+	prompt    string
 
 	// Mode-invariant
-	twrds     string
+	towards   string
 	filledDot string
 	hollowDot string
-	horzLine  string
+	horizLine string
 	vertLine  string
 	keyTab    string
 	keyEnter  string
@@ -29,12 +29,12 @@ type iconSet struct {
 func newIconSet(noNerdFont bool) iconSet {
 	icons := iconSet{
 		// Shared symbols
-		plt:   "Pl.",
-		twrds: "→",
+		platform: "Pl.",
+		towards:  "→",
 
 		filledDot: "●",
 		hollowDot: "○",
-		horzLine:  "─",
+		horizLine: "─",
 		vertLine:  "│",
 
 		keyTab:   "⇥",
@@ -47,20 +47,20 @@ func newIconSet(noNerdFont bool) iconSet {
 	}
 
 	if noNerdFont {
-		icons.arr = "↘"
-		icons.dpt = "↗"
-		icons.srch = "⌕"
-		icons.swp = "⇋"
-		icons.vhc = "×"
-		icons.wlk = "Walk:"
+		icons.arrival = "↘"
+		icons.departure = "↗"
+		icons.search = "⌕"
+		icons.swap = "⇋"
+		icons.vehicle = "×"
+		icons.walk = "Walk:"
 		icons.prompt = "> "
 	} else {
-		icons.arr = "󰗔"
-		icons.dpt = ""
-		icons.srch = ""
-		icons.swp = ""
-		icons.vhc = ""
-		icons.wlk = ""
+		icons.arrival = "󰗔"
+		icons.departure = ""
+		icons.search = ""
+		icons.swap = ""
+		icons.vehicle = ""
+		icons.walk = ""
 		icons.prompt = " "
 	}
 
