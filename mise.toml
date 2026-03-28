@@ -1,6 +1,25 @@
 [tools]
 go = "latest"
+gofumpt = "latest"
 golangci-lint = "latest"
+
+[tasks.fmt]
+description = "Format Go files"
+quiet = true
+usage = """
+arg "<path>" help="path to run the formatter on"
+flag "-w --write" help="Write result to (source) files instead of stdout"
+flag "-d --diff"  help="Display diffs instead of rewriting files"
+"""
+run = """
+if [ "$usage_write" = "true" ]; then
+  gofumpt -w ${usage_path}
+elif [ "$usage_diff" = "true" ]; then
+  gofumpt -d ${usage_path}
+else
+  gofumpt ${usage_path}
+fi
+"""
 
 [tasks.lint]
 description = "Lint Go files"
