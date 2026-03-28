@@ -1,2 +1,9 @@
 [tools]
 go = "latest"
+golangci-lint = "latest"
+
+[tasks.lint]
+description = "Lint Go files"
+quiet = true
+run = "golangci-lint run"
+
