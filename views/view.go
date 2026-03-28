@@ -1007,6 +1007,8 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 		return style.Render("\n  Connection details unavailable\n")
 	}
 
+	lineContentWidth := max(width-style.GetHorizontalFrameSize()-2, 0)
+
 	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vhc + " ")
 	vehicleModel := m.styles.vehicleModel.Render(c.Sections[firstVehicle].Journey.Category + " " + c.Sections[firstVehicle].Journey.Number)
 	company := m.styles.company.Render(c.Sections[firstVehicle].Journey.Operator)
@@ -1020,8 +1022,28 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 	departureDelay := m.formatDelay(c.Sections[firstVehicle].Departure.Delay)
 	arrivalDelay := m.formatDelay(c.Sections[lastVehicle].Arrival.Delay)
 
-	stopsLineWidth := max(width-stopsLineFixedWidth, stopsLineMinWidth)
-	stopsLine := m.styles.bold.Render(m.renderStopsLine(c, stopsLineWidth))
+	timelinePrefix := ""
+	if c.Sections[0].Walk != nil {
+		walkMinutes := int(c.Sections[0].Arrival.Arrival.Sub(c.Sections[0].Departure.Departure).Minutes())
+		if walkMinutes > 0 {
+			timelinePrefix = m.icons.wlk + " " + m.styles.text.Render(fmt.Sprintf("%d'", walkMinutes)) + "  "
+		}
+	}
+
+	timelineFixedWidth := lipgloss.Width(timelinePrefix) +
+		lipgloss.Width(departure) +
+		lipgloss.Width(departureDelay) + 2 +
+		2 +
+		lipgloss.Width(arrival) +
+		lipgloss.Width(arrivalDelay)
+	stopsLineWidth := max(lineContentWidth-timelineFixedWidth, stopsLineMinWidth)
+	stopsLineRaw := m.renderStopsLine(c, stopsLineWidth)
+	timelineWidth := timelineFixedWidth + lipgloss.Width(stopsLineRaw)
+	if overflow := timelineWidth - lineContentWidth; overflow > 0 {
+		stopsLineWidth = max(stopsLineWidth-overflow, stopsLineMinWidth)
+		stopsLineRaw = m.renderStopsLine(c, stopsLineWidth)
+	}
+	stopsLine := m.styles.bold.Render(stopsLineRaw)
 
 	platformInfo := ""
 	platform := c.Sections[firstVehicle].Departure.Platform
@@ -1030,21 +1052,18 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 	}
 	if platform != "" {
 		platformInfo = m.icons.plt + " " + m.styles.text.Render(platform)
-	} else if c.Sections[0].Walk != nil {
-		platformInfo = m.icons.wlk + " " + m.styles.text.Render(
-			fmt.Sprintf("%vm", c.Sections[0].Arrival.Arrival.Sub(c.Sections[0].Departure.Departure).Minutes()),
-		)
 	}
 
 	duration := m.styles.text.Render(formatDuration(c.Duration))
 
-	bottomLinePadding := max(width-(borderSize*2+smplConnMrgn*2+smplConnMrgn*2+3+5), 1)
+	bottomLinePadding := max(lineContentWidth-lipgloss.Width(platformInfo)-lipgloss.Width(duration), 1)
 
-	content := fmt.Sprintf("\n  %s %s %s  %s\n\n  %s%s  %s  %s%s\n\n  %s%s%v\n",
+	content := fmt.Sprintf("\n  %s %s %s  %s\n\n  %s%s%s  %s  %s%s\n\n  %s%s%v\n",
 		vehicleIcon,
 		vehicleModel,
 		company,
 		endStop,
+		timelinePrefix,
 		departure,
 		departureDelay,
 		stopsLine,
