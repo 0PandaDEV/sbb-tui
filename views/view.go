@@ -988,10 +988,13 @@ func truncateString(s string, maxLen int) string {
 
 func (m model) renderSimpleConnection(c models.Connection, index int, width int) string {
 	firstVehicle := -1
+	lastVehicle := -1
 	for x := range c.Sections {
 		if c.Sections[x].Journey != nil {
-			firstVehicle = x
-			break
+			if firstVehicle == -1 {
+				firstVehicle = x
+			}
+			lastVehicle = x
 		}
 	}
 
@@ -1009,13 +1012,13 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 	company := m.styles.company.Render(c.Sections[firstVehicle].Journey.Operator)
 	endStop := m.styles.text.Render(c.Sections[firstVehicle].Journey.To)
 
-	dep := c.FromData.Departure.Local().Format("15:04")
+	dep := c.Sections[firstVehicle].Departure.Departure.Local().Format("15:04")
 	arr := c.ToData.Arrival.Local().Format("15:04")
 	departure := m.styles.bold.Render(dep)
 	arrival := m.styles.bold.Render(arr)
 
 	departureDelay := m.formatDelay(c.Sections[firstVehicle].Departure.Delay)
-	arrivalDelay := m.formatDelay(c.Sections[firstVehicle].Arrival.Delay)
+	arrivalDelay := m.formatDelay(c.Sections[lastVehicle].Arrival.Delay)
 
 	stopsLineWidth := max(width-stopsLineFixedWidth, stopsLineMinWidth)
 	stopsLine := m.styles.bold.Render(m.renderStopsLine(c, stopsLineWidth))
