@@ -55,42 +55,38 @@ var (
 	noStyle = lipgloss.NewStyle()
 )
 
-func (m model) color(value string) lipgloss.Color {
-	return lipgloss.Color(value)
-}
-
 func (m model) focusedStyle() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.color(m.theme.Primary)).
+		BorderForeground(lipgloss.Color(m.theme.Primary)).
 		Padding(0, 1)
 }
 
 func (m model) blurredStyle() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.color(m.theme.Border)).
+		BorderForeground(lipgloss.Color(m.theme.Border)).
 		Padding(0, 1)
 }
 
 func (m model) detailedResultStyle() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(m.color(m.theme.Primary)).
+		BorderForeground(lipgloss.Color(m.theme.Primary)).
 		Padding(fullConnPaddV, fullConnPaddH)
 }
 
 func (m model) helpKeyStyle() lipgloss.Style {
 	return lipgloss.NewStyle().
 		Bold(true).
-		Foreground(m.color(m.theme.Text)).
-		Background(m.color(m.theme.KeysBg)).
+		Foreground(lipgloss.Color(m.theme.Text)).
+		Background(lipgloss.Color(m.theme.KeysBg)).
 		Padding(0, 1)
 }
 
 func (m model) helpDescStyle() lipgloss.Style {
 	return lipgloss.NewStyle().
-		Foreground(m.color(m.theme.Muted))
+		Foreground(lipgloss.Color(m.theme.Muted))
 }
 
 type focusable struct {
@@ -260,7 +256,7 @@ func InitialModel(cfg Config) model {
 			t.CharLimit = 10
 			t.Width = t.CharLimit
 			t.ShowSuggestions = true
-			t.CompletionStyle = noStyle.Foreground(m.color(m.theme.Muted))
+			t.CompletionStyle = noStyle.Foreground(lipgloss.Color(m.theme.Muted))
 			t.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("right"))
 			if cfg.Date != "" {
 				t.SetValue(cfg.Date)
@@ -272,7 +268,7 @@ func InitialModel(cfg Config) model {
 			t.CharLimit = 5
 			t.Width = t.CharLimit
 			t.ShowSuggestions = true
-			t.CompletionStyle = noStyle.Foreground(m.color(m.theme.Muted))
+			t.CompletionStyle = noStyle.Foreground(lipgloss.Color(m.theme.Muted))
 			t.KeyMap.AcceptSuggestion = key.NewBinding(key.WithKeys("right"))
 			if cfg.Time != "" {
 				t.SetValue(cfg.Time)
@@ -429,7 +425,7 @@ func (m model) View() string {
 		minW := minTermWidth
 		msg := fmt.Sprintf("Terminal too small (%dx%d)\nMinimum size: %dx%d", m.width, m.height, minW, minTermHeight)
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
-			noStyle.Foreground(m.color(m.theme.Warning)).Bold(true).Render(msg))
+			noStyle.Foreground(lipgloss.Color(m.theme.Warning)).Bold(true).Render(msg))
 	}
 
 	header := m.renderHeader()
@@ -448,7 +444,7 @@ func (m model) View() string {
 		header,
 		noStyle.
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(m.color(m.theme.Border)).
+			BorderForeground(lipgloss.Color(m.theme.Border)).
 			Width(m.contentWidth()).
 			Height(m.resultsHeight()).
 			Padding(0, rsltMrgn).
@@ -746,7 +742,7 @@ func (m model) renderResults() string {
 	}
 
 	if m.errorMsg != "" {
-		return "\n  " + noStyle.Foreground(m.color(m.theme.Warning)).Render(m.errorMsg)
+		return "\n  " + noStyle.Foreground(lipgloss.Color(m.theme.Warning)).Render(m.errorMsg)
 	}
 
 	if len(m.connections) == 0 {
@@ -773,9 +769,9 @@ func (m model) renderStartScreen() string {
 	}
 	logo = strings.TrimRight(logo, "\n")
 
-	coloredLogo := noStyle.Foreground(m.color(m.theme.Text)).Render(logo)
+	coloredLogo := noStyle.Foreground(lipgloss.Color(m.theme.Text)).Render(logo)
 
-	text := noStyle.Foreground(m.color(m.theme.Muted)).Render("Enter stations above to see timetables")
+	text := noStyle.Foreground(lipgloss.Color(m.theme.Muted)).Render("Enter stations above to see timetables")
 
 	block := lipgloss.JoinVertical(lipgloss.Center, text, "", coloredLogo)
 
@@ -853,10 +849,10 @@ func (m model) renderJourneySection(section models.Section, width int, isFirst, 
 	spacingLine := fmt.Sprintf("%s  %s", indent, m.icons.vertLine)
 	lines = append(lines, spacingLine)
 
-	vehicleIcon := noStyle.Background(m.color(m.theme.Vehicle)).Foreground(m.color(m.theme.Text)).Render(" " + m.icons.vhc + " ")
-	vehicleCategory := noStyle.Background(m.color(m.theme.Primary)).Foreground(m.color(m.theme.Text)).Bold(true).
+	vehicleIcon := noStyle.Background(lipgloss.Color(m.theme.Vehicle)).Foreground(lipgloss.Color(m.theme.Text)).Render(" " + m.icons.vhc + " ")
+	vehicleCategory := noStyle.Background(lipgloss.Color(m.theme.Primary)).Foreground(lipgloss.Color(m.theme.Text)).Bold(true).
 		Render(section.Journey.Category + " " + section.Journey.Number)
-	company := noStyle.Background(m.color(m.theme.Company)).Foreground(m.color(m.theme.Text)).
+	company := noStyle.Background(lipgloss.Color(m.theme.Company)).Foreground(lipgloss.Color(m.theme.Text)).
 		Render(section.Journey.Operator)
 	vehicleLine := fmt.Sprintf("%s  %s  %s %s %s", indent, m.icons.vertLine, vehicleIcon, vehicleCategory, company)
 	lines = append(lines, vehicleLine)
@@ -926,7 +922,7 @@ func (m model) formatStationLine(timeStr string, delay int, symbol, station, pla
 	delayPart := ""
 	if delay > 0 {
 		delayStr := fmt.Sprintf("+%d", delay)
-		delayPart = noStyle.Foreground(m.color(m.theme.Warning)).Bold(true).Render(fmt.Sprintf("%*s", delayCol, delayStr))
+		delayPart = noStyle.Foreground(lipgloss.Color(m.theme.Warning)).Bold(true).Render(fmt.Sprintf("%*s", delayCol, delayStr))
 	} else {
 		delayPart = strings.Repeat(" ", delayCol)
 	}
@@ -978,10 +974,10 @@ func (m model) renderSimpleConnection(c models.Connection, index int, width int)
 		}
 	}
 
-	vehicleIcon := noStyle.Background(m.color(m.theme.Vehicle)).Foreground(m.color(m.theme.Text)).Render(" " + m.icons.vhc + " ")
-	vehicleCategory := noStyle.Background(m.color(m.theme.Primary)).Foreground(m.color(m.theme.Text)).Bold(true).
+	vehicleIcon := noStyle.Background(lipgloss.Color(m.theme.Vehicle)).Foreground(lipgloss.Color(m.theme.Text)).Render(" " + m.icons.vhc + " ")
+	vehicleCategory := noStyle.Background(lipgloss.Color(m.theme.Primary)).Foreground(lipgloss.Color(m.theme.Text)).Bold(true).
 		Render(c.Sections[firstVehicle].Journey.Category + " " + c.Sections[firstVehicle].Journey.Number)
-	company := noStyle.Background(m.color(m.theme.Company)).Foreground(m.color(m.theme.Text)).
+	company := noStyle.Background(lipgloss.Color(m.theme.Company)).Foreground(lipgloss.Color(m.theme.Text)).
 		Render(c.Sections[firstVehicle].Journey.Operator)
 	endStop := noStyle.Render(c.Sections[firstVehicle].Journey.To)
 
@@ -1049,7 +1045,7 @@ func formatDuration(duration string) string {
 
 func (m model) formatDelay(delay int) string {
 	if delay > 0 {
-		return noStyle.Foreground(m.color(m.theme.Warning)).Bold(true).Render(fmt.Sprintf(" +%d", delay))
+		return noStyle.Foreground(lipgloss.Color(m.theme.Warning)).Bold(true).Render(fmt.Sprintf(" +%d", delay))
 	}
 	return ""
 }
