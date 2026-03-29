@@ -106,7 +106,7 @@ func (m appModel) renderJourneySection(section model.Section, width, labelCol, p
 	vehicleLine := fmt.Sprintf("%s  %s  %s %s %s", indent, m.icons.vertLine, vehicleIcon, vehicleModel, company)
 	lines = append(lines, vehicleLine)
 
-	destLine := fmt.Sprintf("%s  %s   %s %s", indent, m.icons.vertLine, m.icons.towards, section.Journey.To)
+	destLine := fmt.Sprintf("%s  %s   %s", indent, m.icons.vertLine, m.styles.ghostText.Render(m.icons.towards+" "+section.Journey.To))
 	lines = append(lines, destLine)
 
 	lines = append(lines, spacingLine)
