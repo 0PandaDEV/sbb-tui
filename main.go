@@ -42,18 +42,19 @@ func main() {
 	}
 
 	if *showVersion {
-		fmt.Printf("sbb-tui v%s\n", version)
+		fmt.Printf("sbb-tui %s\n", version)
 		os.Exit(0)
 	}
 
 	cfg := config.Config{
-		From:          *from,
-		To:            *to,
-		Date:          *date,
-		Time:          *timeStr,
-		IsArrivalTime: *arrival,
-		NoNerdFont:    *noNerdFont,
-		Theme:         theme,
+		From:           *from,
+		To:             *to,
+		Date:           *date,
+		Time:           *timeStr,
+		IsArrivalTime:  *arrival,
+		NoNerdFont:     *noNerdFont,
+		Theme:          theme,
+		CurrentVersion: version,
 	}
 
 	m := ui.NewModel(cfg)

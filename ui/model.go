@@ -9,6 +9,7 @@ import (
 
 	"github.com/necrom4/sbb-tui/config"
 	"github.com/necrom4/sbb-tui/model"
+	"github.com/necrom4/sbb-tui/util"
 )
 
 const (
@@ -40,25 +41,31 @@ type suggestTickMsg struct {
 	seq        int
 }
 
+type versionCheckMsg struct {
+	newerVersion string
+}
+
 type appModel struct {
-	width         int
-	height        int
-	tabIndex      int
-	resultIndex   int
-	detailScrollY int
-	headerOrder   []focusable
-	inputs        []textinput.Model
-	icons         iconSet
-	styles        styles
-	noNerdFont    bool
-	isArrivalTime bool
-	connections   []model.Connection
-	loading       bool
-	errorMsg      string
-	searched      bool
-	lastFromQuery string
-	lastToQuery   string
-	suggestSeq    [2]int
+	width          int
+	height         int
+	tabIndex       int
+	resultIndex    int
+	detailScrollY  int
+	headerOrder    []focusable
+	inputs         []textinput.Model
+	icons          iconSet
+	styles         styles
+	noNerdFont     bool
+	isArrivalTime  bool
+	connections    []model.Connection
+	loading        bool
+	errorMsg       string
+	searched       bool
+	lastFromQuery  string
+	lastToQuery    string
+	suggestSeq     [2]int
+	currentVersion string
+	newerVersion   string
 }
 
 // NewModel creates the initial Bubbletea model from the application config.
@@ -73,11 +80,12 @@ func NewModel(cfg config.Config) appModel {
 			{kindInput, "time", 3},
 			{kindButton, "search", -1},
 		},
-		inputs:        make([]textinput.Model, 4),
-		icons:         newIconSet(cfg.NoNerdFont),
-		styles:        newStyles(cfg.Theme),
-		noNerdFont:    cfg.NoNerdFont,
-		isArrivalTime: cfg.IsArrivalTime,
+		inputs:         make([]textinput.Model, 4),
+		icons:          newIconSet(cfg.NoNerdFont),
+		styles:         newStyles(cfg.Theme),
+		noNerdFont:     cfg.NoNerdFont,
+		isArrivalTime:  cfg.IsArrivalTime,
+		currentVersion: cfg.CurrentVersion,
 	}
 
 	now := time.Now()
@@ -133,4 +141,13 @@ func NewModel(cfg config.Config) appModel {
 }
 
 // Init implements tea.Model.
-func (m appModel) Init() tea.Cmd { return textinput.Blink }
+func (m appModel) Init() tea.Cmd {
+	return tea.Batch(textinput.Blink, checkVersionCmd(m.currentVersion))
+}
+
+func checkVersionCmd(current string) tea.Cmd {
+	return func() tea.Msg {
+		newer, _ := util.NewerVersion(current)
+		return versionCheckMsg{newerVersion: newer}
+	}
+}

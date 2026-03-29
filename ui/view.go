@@ -183,6 +183,13 @@ func (m appModel) renderStartScreen() string {
 
 	block := lipgloss.JoinVertical(lipgloss.Center, text, "", coloredLogo)
 
+	if m.newerVersion != "" {
+		url := "https://github.com/Necrom4/sbb-tui/releases/latest"
+		link := renderLink(m.newerVersion, url)
+		label := fmt.Sprintf("Update available: %s", link)
+		block = lipgloss.JoinVertical(lipgloss.Center, block, "", m.styles.active.Render(label))
+	}
+
 	width := max(m.contentWidth()-borderSize-(resultMargin*2), 0)
 	height := m.resultsHeight()
 
