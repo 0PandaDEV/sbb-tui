@@ -5,6 +5,7 @@ type iconSet struct {
 	arrival   string
 	departure string
 	platform  string
+	stop      string
 	search    string
 	swap      string
 	vehicle   string
@@ -30,6 +31,7 @@ func newIconSet(noNerdFont bool) iconSet {
 	icons := iconSet{
 		// Shared symbols
 		platform: "Pl.",
+		stop:     "Stop",
 		towards:  "→",
 
 		filledDot: "●",
@@ -65,4 +67,11 @@ func newIconSet(noNerdFont bool) iconSet {
 	}
 
 	return icons
+}
+
+func (ic iconSet) platformLabel(platform string) string {
+	if len(platform) > 0 && platform[0] >= 'A' && platform[0] <= 'Z' {
+		return ic.stop
+	}
+	return ic.platform
 }

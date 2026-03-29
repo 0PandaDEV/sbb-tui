@@ -14,6 +14,31 @@ func (m appModel) renderFullConnection(c model.Connection, width int) string {
 	var lines []string
 	innerWidth := max(width-borderSize-(detailPaddingH*2), 0)
 
+	// Pre-compute widest label and value widths so platform values align.
+	labelCol := 0
+	valueCol := 0
+	for _, section := range c.Sections {
+		if section.Journey == nil {
+			continue
+		}
+		for _, p := range []string{section.Departure.Platform, section.Arrival.Platform} {
+			if p != "" {
+				label := m.icons.platformLabel(p)
+				if lw := len([]rune(label)); lw > labelCol {
+					labelCol = lw
+				}
+				if vw := len([]rune(p)); vw > valueCol {
+					valueCol = vw
+				}
+			}
+		}
+	}
+	// platformCol is the total visible width: padded label + space + widest value
+	platformCol := 0
+	if labelCol > 0 {
+		platformCol = labelCol + 1 + valueCol
+	}
+
 	for i, section := range c.Sections {
 		isFirst := i == 0
 		isLast := i == len(c.Sections)-1
@@ -21,7 +46,7 @@ func (m appModel) renderFullConnection(c model.Connection, width int) string {
 		if section.Walk != nil {
 			lines = append(lines, m.renderWalkSection(section)...)
 		} else if section.Journey != nil {
-			lines = append(lines, m.renderJourneySection(section, innerWidth, isFirst, isLast)...)
+			lines = append(lines, m.renderJourneySection(section, innerWidth, labelCol, platformCol, isFirst, isLast)...)
 		}
 
 		if !isLast {
@@ -29,7 +54,8 @@ func (m appModel) renderFullConnection(c model.Connection, width int) string {
 		}
 	}
 
-	boxHeight := max(m.resultsHeight()-borderSize-(detailPaddingV*2), 0)
+	detailFrame := m.styles.detailedResult.GetVerticalFrameSize()
+	boxHeight := max(m.resultsHeight()-detailFrame, 0)
 
 	// Wrap and split into visual lines for scrolling.
 	content := strings.Join(lines, "\n")
@@ -45,11 +71,10 @@ func (m appModel) renderFullConnection(c model.Connection, width int) string {
 	return m.styles.detailedResult.Width(width).Height(boxHeight).Render(strings.Join(visLines, "\n"))
 }
 
-func (m appModel) renderJourneySection(section model.Section, width int, isFirst, isLast bool) []string {
+func (m appModel) renderJourneySection(section model.Section, width, labelCol, platformCol int, isFirst, isLast bool) []string {
 	var lines []string
 
 	const timeCol = 5
-	const delayCol = 4
 	const symbolCol = 5
 
 	depTime := section.Departure.Scheduled.Local().Format("15:04")
@@ -62,12 +87,18 @@ func (m appModel) renderJourneySection(section model.Section, width int, isFirst
 		depDot = m.icons.filledDot
 	}
 
-	depLine := m.formatStationLine(depTime, depDelay, depDot, depStation, depPlatform, width, timeCol, delayCol, symbolCol, true)
+	depLine := m.formatStationLine(depTime, depDot, depStation, depPlatform, width, timeCol, symbolCol, labelCol, platformCol, true)
 	lines = append(lines, depLine)
 
-	indent := strings.Repeat(" ", timeCol+delayCol)
+	indent := strings.Repeat(" ", timeCol)
 	spacingLine := fmt.Sprintf("%s  %s", indent, m.icons.vertLine)
-	lines = append(lines, spacingLine)
+
+	if depDelay > 0 {
+		delayStr := m.styles.warningBold.Render(fmt.Sprintf("%*s", timeCol, fmt.Sprintf("+%d", depDelay)))
+		lines = append(lines, fmt.Sprintf("%s  %s", delayStr, m.styles.bold.Render(m.icons.vertLine)))
+	} else {
+		lines = append(lines, spacingLine)
+	}
 
 	vehicleIcon := m.styles.vehicleIcon.Render(" " + m.icons.vehicle + " ")
 	vehicleModel := m.styles.vehicleModel.Render(section.Journey.Category + " " + section.Journey.Number)
@@ -75,7 +106,7 @@ func (m appModel) renderJourneySection(section model.Section, width int, isFirst
 	vehicleLine := fmt.Sprintf("%s  %s  %s %s %s", indent, m.icons.vertLine, vehicleIcon, vehicleModel, company)
 	lines = append(lines, vehicleLine)
 
-	destLine := fmt.Sprintf("%s  %s   %s %s", indent, m.icons.vertLine, m.icons.towards, section.Journey.To)
+	destLine := fmt.Sprintf("%s  %s   %s", indent, m.icons.vertLine, m.styles.ghostText.Render(m.icons.towards+" "+section.Journey.To))
 	lines = append(lines, destLine)
 
 	lines = append(lines, spacingLine)
@@ -90,8 +121,13 @@ func (m appModel) renderJourneySection(section model.Section, width int, isFirst
 		arrSymbol = m.icons.filledDot
 	}
 
-	arrLine := m.formatStationLine(arrTime, arrDelay, arrSymbol, arrStation, arrPlatform, width, timeCol, delayCol, symbolCol, false)
+	arrLine := m.formatStationLine(arrTime, arrSymbol, arrStation, arrPlatform, width, timeCol, symbolCol, labelCol, platformCol, false)
 	lines = append(lines, arrLine)
+
+	if arrDelay > 0 {
+		delayStr := m.styles.warningBold.Render(fmt.Sprintf("%*s", timeCol, fmt.Sprintf("+%d", arrDelay)))
+		lines = append(lines, delayStr)
+	}
 
 	return lines
 }
@@ -129,13 +165,13 @@ func (m appModel) renderWalkSection(section model.Section) []string {
 		walkDuration = renderLink(walkDuration, url)
 	}
 
-	walkLine := fmt.Sprintf("           %s %s'", m.icons.walk, walkDuration)
+	walkLine := fmt.Sprintf("%s  %s %s'", strings.Repeat(" ", 5), m.icons.walk, walkDuration)
 	lines = append(lines, walkLine)
 
 	return lines
 }
 
-func (m appModel) formatStationLine(timeStr string, delay int, symbol, station, platform string, width, timeCol, delayCol, symbolCol int, bold bool) string {
+func (m appModel) formatStationLine(timeStr, symbol, station, platform string, width, timeCol, symbolCol, labelCol, platformCol int, bold bool) string {
 	textStyle := m.styles.text
 	if bold {
 		textStyle = m.styles.bold
@@ -143,37 +179,34 @@ func (m appModel) formatStationLine(timeStr string, delay int, symbol, station, 
 
 	timePart := textStyle.Render(timeStr)
 
-	delayPart := ""
-	if delay > 0 {
-		delayStr := fmt.Sprintf("+%d'", delay)
-		delayPart = m.styles.warningBold.Render(fmt.Sprintf("%*s", delayCol, delayStr))
-	} else {
-		delayPart = strings.Repeat(" ", delayCol)
-	}
-
-	symbolPart := fmt.Sprintf("  %s  ", symbol)
+	symbolPart := fmt.Sprintf("  %s  ", textStyle.Render(symbol))
 
 	platformPart := ""
-	platformVisibleLen := 0
 	if platform != "" {
-		platformPart = textStyle.Render(fmt.Sprintf("%s %s", m.icons.platform, platform))
-		platformVisibleLen = len(platform) + len(m.icons.platform) + 1
+		label := m.icons.platformLabel(platform)
+		leadingPad := strings.Repeat(" ", max(labelCol-len([]rune(label)), 0))
+		labelPart := leadingPad + m.styles.ghostText.Render(label)
+		valuePart := textStyle.Render(platform)
+		platformPart = labelPart + " " + valuePart
 	}
 
-	fixedWidth := timeCol + delayCol + symbolCol + platformVisibleLen
+	fixedWidth := timeCol + symbolCol
+	if platformCol > 0 {
+		fixedWidth += platformCol
+	}
 	availableForStation := max(width-fixedWidth-1, 5)
 
 	truncatedStation := truncateString(station, availableForStation)
 	stationPart := textStyle.Render(truncatedStation)
 
-	stationLen := len(truncatedStation)
+	stationLen := len([]rune(truncatedStation))
 	padding := max(availableForStation-stationLen, 1)
 
 	if platformPart != "" {
-		return fmt.Sprintf("%s%s%s%s%s%s",
-			timePart, delayPart, symbolPart, stationPart, strings.Repeat(" ", padding), platformPart)
+		return fmt.Sprintf("%s%s%s%s%s",
+			timePart, symbolPart, stationPart, strings.Repeat(" ", padding), platformPart)
 	}
-	return fmt.Sprintf("%s%s%s%s", timePart, delayPart, symbolPart, stationPart)
+	return fmt.Sprintf("%s%s%s", timePart, symbolPart, stationPart)
 }
 
 func truncateString(s string, maxLen int) string {
@@ -254,7 +287,8 @@ func (m appModel) renderSimpleConnection(c model.Connection, index int, width in
 		platform = c.From.Platform
 	}
 	if platform != "" {
-		platformInfo = m.icons.platform + " " + m.styles.text.Render(platform)
+		label := m.icons.platformLabel(platform)
+		platformInfo = m.styles.ghostText.Render(label) + " " + m.styles.text.Render(platform)
 	}
 
 	duration := m.styles.text.Render(formatDuration(c.Duration))
